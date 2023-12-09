@@ -16,7 +16,7 @@ def validate_input(x, y, theta, map_width, map_height):
         raise ValueError("Robot x and y coordinates must be within the bounds of the map. (680,400)")
 
 # Function to cast rays through the map and visualize them on the image
-def cast_rays(robot_pose, opening_angle, max_range, map_path, map_width, map_height):
+def cast_rays(robot_pose, opening_angle, max_range, map_path, map_width, map_height, output_file):
     # Read the map image using cv2
     map_array = cv2.imread(map_path)
 
@@ -28,7 +28,7 @@ def cast_rays(robot_pose, opening_angle, max_range, map_path, map_width, map_hei
     circle = Circle((robot_pose[0], robot_pose[1]), robot_radius, color='red')
     plt.gca().add_patch(circle)
 
-    # plot the robot orientation as a line
+    # Plot the robot orientation as a line
     plt.plot(
         [robot_pose[0], robot_pose[0] + 50 * np.cos(robot_pose[2] * np.pi / 180)], 
         [robot_pose[1], robot_pose[1] + 50 * np.sin(robot_pose[2] * np.pi / 180)], 
@@ -37,11 +37,16 @@ def cast_rays(robot_pose, opening_angle, max_range, map_path, map_width, map_hei
     # Convert robot coordinates to map coordinates
     start_point = (int(x), int(y))
 
+    # Create a list to store measurements
+    measurements = []
+
     # Iterate over angles within the specified opening angle
     for angle in range(int(theta) - opening_angle // 2, int(theta) + opening_angle // 2 + 1, 2):
 
         # Loop over the points of each line
         laser_range, laser_step = max_range, 1
+        max_distance = 0
+        endpoint = None
         for d in range(0, int(laser_range), laser_step):
             # Calculate the endpoint of the ray
             end_point = get_end_point(start_point, angle, d)
@@ -51,8 +56,21 @@ def cast_rays(robot_pose, opening_angle, max_range, map_path, map_width, map_hei
                 d = laser_range
                 break  # Break the loop if a black pixel is encountered
             else:
+                # Update the maximum distance and endpoint for the angle
+                max_distance = d
+                endpoint = end_point
+
                 # Draw the green ray by setting the pixel color to [0, 255, 0]
                 map_array[end_point[1], end_point[0]] = [0, 255, 0]
+
+        # Save the measurements
+        measurements.append((angle, endpoint, max_distance))
+
+    # Save measurements to a text file
+    with open(output_file, 'w') as file:
+        file.write("Angle\tEndpoint\tMax_Distance\n")
+        for angle, endpoint, max_distance in measurements:
+            file.write(f"{angle}\t{endpoint}\t{max_distance}\n")
 
     # Display the map with the drawn rays using Matplotlib
     plt.imshow(cv2.cvtColor(map_array, cv2.COLOR_BGR2RGB))
@@ -74,8 +92,9 @@ else:
     robot_pose = (x, y, theta)
 
     opening_angle = 250
-    max_range = 1200/4  
-    map_path = "Map.jpg" 
+    max_range = 1200 / 4
+    map_path = "Map.jpg"
+    output_file = "measurements.txt"
 
-    # Cast the rays
-    cast_rays(robot_pose, opening_angle, max_range, map_path, map_width, map_height)
+    # Cast the rays and save measurements
+    cast_rays(robot_pose, opening_angle, max_range, map_path, map_width, map_height, output_file)
