@@ -1,6 +1,4 @@
-# Sensor Models
-
-## Overview
+# Overview 🤖
 This repository contains the solution for CMP2024 Robotics course Assignment 1, focusing on sensor models for laser-range measurements and their likelihood fields. The assignment involves generating laser-range measurements using ray casting and implementing the endpoint model for these measurements.<br>
 
 ## Problem 1
